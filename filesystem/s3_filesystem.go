@@ -19,7 +19,7 @@ type S3Filesystem struct {
 
 func NewS3Filesystem(name string, region string) S3Filesystem {
 	// Loads AWS credentials from environment
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if err != nil {
 		panic(err)
 	}
