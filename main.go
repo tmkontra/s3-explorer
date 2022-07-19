@@ -18,7 +18,7 @@ type ServerConfig struct {
 
 	// s3 configs
 	BucketName   string `mapstructure:"BUCKET_NAME"`
-	BucketRegion string `mapstructure:"AWS_REGION"`
+	BucketRegion string `mapstructure:"BUCKET_REGION"`
 }
 
 func (c *ServerConfig) GetFilesystem() (filesystem.Filesystem, error) {
@@ -68,7 +68,7 @@ func loadConfig() (config ServerConfig, err error) {
 	viper.SetDefault("Env", "development")
 	viper.BindEnv("ENV")
 	viper.BindEnv("BUCKET_NAME")
-	viper.BindEnv("AWS_REGION")
+	viper.BindEnv("BUCKET_REGION")
 	viper.AutomaticEnv()
 
 	err = viper.Unmarshal(&config)
