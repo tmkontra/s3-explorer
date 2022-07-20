@@ -11,19 +11,7 @@ func NewLocalFilesystem() LocalFilesystem {
 	return LocalFilesystem{}
 }
 
-func (l LocalFilesystem) GetPath(path string) (Result, error) {
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return nil, err
-	}
-	if fileInfo.IsDir() {
-		return GetFolderResult(path)
-	} else {
-		return GetFileResult(path)
-	}
-}
-
-func GetFileResult(path string) (Result, error) {
+func (fs LocalFilesystem) GetFile(path string) (Result, error) {
 	buf, err := os.ReadFile(path)
 	content := string(buf)
 	if err != nil {
@@ -36,7 +24,7 @@ func GetFileResult(path string) (Result, error) {
 	}, nil
 }
 
-func GetFolderResult(path string) (Result, error) {
+func (fs LocalFilesystem) GetFolder(path string) (Result, error) {
 	dirEntries, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err

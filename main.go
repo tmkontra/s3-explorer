@@ -52,7 +52,7 @@ func main() {
 			c.JSON(400, gin.H{"error": err})
 			return
 		}
-		result, err := fs.GetPath(request.Path)
+		result, err := filesystem.GetPath(fs, request.Path)
 		if err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return

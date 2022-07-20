@@ -1,8 +1,11 @@
 package filesystem
 
+import "strings"
+
 const (
-	FileResultType   = "object"
-	FolderResultType = "folder"
+	FileResultType        = "object"
+	FolderResultType      = "folder"
+	folderSuffixCharacter = "/" // Some filesystems use a different directory separator
 )
 
 type Result interface {
@@ -39,5 +42,14 @@ func (f FolderResult) GetData() map[string]interface{} {
 }
 
 type Filesystem interface {
-	GetPath(path string) (Result, error)
+	GetFolder(path string) (Result, error)
+	GetFile(path string) (Result, error)
+}
+
+func GetPath(fs Filesystem, path string) (Result, error) {
+	if strings.HasSuffix(path, folderSuffixCharacter) {
+		return fs.GetFolder(path)
+	} else {
+		return fs.GetFile(path)
+	}
 }
