@@ -71,9 +71,11 @@ func (fs S3Filesystem) GetFolder(path string) (Result, error) {
 	// 	to the Filesystem interface, i.e. NormalizePath(path string), that will be called in filesystem.GetPath()
 	path = strings.TrimLeft(path, "/")
 
+	prefixDelimiter := folderSuffixCharacter
 	listInput := s3.ListObjectsV2Input{
 		Bucket: &fs.bucketName,
 		Prefix: &path,
+		Delimiter: &prefixDelimiter,
 	}
 	listObjectsResult, err := s3Client.ListObjectsV2(fs.context, &listInput)
 	if err != nil {
