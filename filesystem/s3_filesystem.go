@@ -12,11 +12,29 @@ import (
 	"strings"
 )
 
+type S3Api interface {
+	GetObject(context.Context, *s3.GetObjectInput) (*s3.GetObjectOutput, error)
+	ListObjects(context.Context, *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error)
+}
+
+type S3ApiImpl struct {
+	s3Client *s3.Client
+}
+
+func (s3Api S3ApiImpl) GetObject(ctx context.Context, input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
+	return s3Api.s3Client.GetObject(ctx, input)
+}
+
+func (s3Api S3ApiImpl) ListObjects(ctx context.Context, input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
+	return s3Api.s3Client.ListObjectsV2(ctx, input)
+}
+
 type S3Filesystem struct {
 	bucketName   string
 	bucketRegion string
 	config       aws.Config
 	context      context.Context
+	s3Api        S3Api
 }
 
 func NewS3Filesystem(name string, region string) S3Filesystem {
@@ -25,17 +43,28 @@ func NewS3Filesystem(name string, region string) S3Filesystem {
 	if err != nil {
 		panic(err)
 	}
+	s3Client := s3.NewFromConfig(cfg)
 	return S3Filesystem{
 		bucketName:   name,
 		bucketRegion: region,
 		config:       cfg,
 		context:      context.TODO(),
+		s3Api:        S3ApiImpl{s3Client: s3Client},
+	}
+}
+
+// Used for testing
+func newS3FilesystemFromApi(name string, region string, s3Api S3Api) S3Filesystem {
+	return S3Filesystem{
+		bucketName:   name,
+		bucketRegion: region,
+		config:       aws.Config{},
+		context:      context.TODO(),
+		s3Api:        s3Api,
 	}
 }
 
 func (fs S3Filesystem) GetFile(path string) (Result, error) {
-	s3Client := s3.NewFromConfig(fs.config)
-
 	// s3 doesn't have a "root" path like a filesystem would, so we trim the leading slash
 	path = strings.TrimLeft(path, "/")
 
@@ -43,7 +72,7 @@ func (fs S3Filesystem) GetFile(path string) (Result, error) {
 		Bucket: &fs.bucketName,
 		Key:    &path,
 	}
-	result, err := s3Client.GetObject(fs.context, &input)
+	result, err := fs.s3Api.GetObject(fs.context, &input)
 	if err != nil {
 		var nsk *types.NoSuchKey
 		// NoSuchKey is an expected error
@@ -64,8 +93,6 @@ func (fs S3Filesystem) GetFile(path string) (Result, error) {
 }
 
 func (fs S3Filesystem) GetFolder(path string) (Result, error) {
-	s3Client := s3.NewFromConfig(fs.config)
-
 	// s3 doesn't have true "folders", just path prefix, so a leading slash is equivalent to empty string
 	// TODO: since both s3 file and folder query trim leading slash from URI, is it worth adding logic
 	// 	to the Filesystem interface, i.e. NormalizePath(path string), that will be called in filesystem.GetPath()
@@ -73,11 +100,11 @@ func (fs S3Filesystem) GetFolder(path string) (Result, error) {
 
 	prefixDelimiter := folderSuffixCharacter
 	listInput := s3.ListObjectsV2Input{
-		Bucket: &fs.bucketName,
-		Prefix: &path,
+		Bucket:    &fs.bucketName,
+		Prefix:    &path,
 		Delimiter: &prefixDelimiter,
 	}
-	listObjectsResult, err := s3Client.ListObjectsV2(fs.context, &listInput)
+	listObjectsResult, err := fs.s3Api.ListObjects(fs.context, &listInput)
 	if err != nil {
 		fmt.Println("Error listing objects with prefix", path, err)
 		return nil, err

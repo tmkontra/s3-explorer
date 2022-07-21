@@ -13,11 +13,11 @@ func NewLocalFilesystem() LocalFilesystem {
 
 func (fs LocalFilesystem) GetFile(path string) (Result, error) {
 	buf, err := os.ReadFile(path)
-	content := string(buf)
 	if err != nil {
-		fmt.Printf("%v\n", err, err)
+		fmt.Printf("%v\n", err)
 		return nil, err
 	}
+	content := string(buf)
 	return FileResult{
 		Path:    path,
 		Content: content,
