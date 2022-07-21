@@ -41,6 +41,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	if config.Env == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	r := gin.Default()
 	fs, err := config.GetFilesystem()
 	if err != nil {
